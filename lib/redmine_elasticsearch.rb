@@ -63,7 +63,7 @@ end
 require_dependency 'redmine_elasticsearch/patches/redmine_search_patch'
 require_dependency 'redmine_elasticsearch/patches/search_controller_patch'
 
-ActionDispatch::Callbacks.to_prepare do
+ActiveSupport::Reloader.to_prepare do
   RedmineElasticsearch.apply_patch RedmineElasticsearch::Patches::RedmineSearchPatch, Redmine::Search
   RedmineElasticsearch.apply_patch RedmineElasticsearch::Patches::SearchControllerPatch, SearchController
   RedmineElasticsearch.apply_patch RedmineElasticsearch::Patches::ResponseResultsPatch, Elasticsearch::Model::Response::Results
