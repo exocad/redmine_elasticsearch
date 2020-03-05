@@ -16,10 +16,16 @@ class IssueSerializer < BaseSerializer
     :fixed_version,
     :due_date,
     :is_closed,
-    :closed
+		:closed,
+		:watchers
 
   has_many :journals, serializer: JournalSerializer
   has_many :attachments, serializer: AttachmentSerializer
+
+	def watchers
+		ret = object.watchers.map(&:user_id)
+		ret
+	end
 
   def author
     object.author.try(:name)

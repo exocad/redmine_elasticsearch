@@ -1,5 +1,5 @@
 class JournalSerializer < ActiveModel::Serializer
   self.root = false
 
-  attributes :id, :notes
+  attributes :id, :notes, :user_id
 end

@@ -30,7 +30,12 @@ module RedmineElasticsearch
           page:               @page,
           size:               @limit,
           from:               @offset,
-          projects:           @projects_to_search
+					projects:           @projects_to_search,
+
+					issues_assigned:    @issues_assigned,
+					issues_involved:    @issues_involved,
+					issues_involved_or_watched: @issues_involved_or_watched,
+					issues_created:    @issues_created
         }
         begin
           search_options[:search_type] = :query_string
@@ -70,7 +75,12 @@ module RedmineElasticsearch
         @object_types       = allowed_object_types(@projects_to_search)
         @scope              = filter_object_types_from_params(@object_types)
         @search_attachments = params[:attachments].presence || '0'
-        @open_issues        = params[:open_issues] ? params[:open_issues].present? : false
+				@open_issues        = params[:open_issues] ? params[:open_issues].present? : false
+				
+				@issues_assigned = params[:issues_assigned] ? params[:issues_assigned].present? : false
+				@issues_involved = params[:issues_involved] ? params[:issues_involved].present? : false
+				@issues_created = params[:issues_created] ? params[:issues_created].present? : false
+				@issues_involved_or_watched = params[:issues_involved_or_watched] ? params[:issues_involved_or_watched].present? : false
 
         @page = [params[:page].to_i, 1].max
         case params[:format]
@@ -166,7 +176,32 @@ module RedmineElasticsearch
           search_klass = RedmineElasticsearch.type2class(search_type)
           type_query   = search_klass.allowed_to_search_query(User.current)
           common_should << type_query if type_query
-        end
+				end
+				
+				filter = []
+				userid = User.current.id
+				userorgroupid = [userid] + User.current.groups.map(&:id)
+
+
+				filter << { term: { author_id: userid } } if options[:issues_created]
+				filter << { terms: { assigned_to_id: userorgroupid } } if options[:issues_assigned]
+				filter << { bool: { should:
+					[
+						{ terms: { assigned_to_id: userorgroupid } },
+						{ term: { author_id: userid } },
+						{ term: { 'journals.user_id': userid } }
+					],
+          minimum_should_match: 1
+				} } if options[:issues_involved]
+				filter << { bool: { should:
+					[
+						{ terms: { assigned_to_id: userorgroupid } },
+						{ terms: { watchers: userorgroupid } },
+						{ term: { author_id: userid } },
+						{ term: { 'journals.user_id': userid } }
+					],
+          minimum_should_match: 1
+				} } if options[:issues_involved_or_watched]
 
         payload = {
           query: {
@@ -174,6 +209,7 @@ module RedmineElasticsearch
               must:                 common_must,
               must_not:             common_must_not,
               should:               common_should,
+              filter:               filter,
               minimum_should_match: 1
             }
           },

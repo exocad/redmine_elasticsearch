@@ -59,8 +59,12 @@ namespace :redmine_elasticsearch do
     ActiveRecord::Base.logger = logger
   end
 
-  def batch_size
-    ENV['BATCH_SIZE'].to_i if ENV['BATCH_SIZE'].present?
+	def batch_size
+		if ENV['BATCH_SIZE'].present?
+			ENV['BATCH_SIZE'].to_i
+		else
+			1024
+		end
   end
 
   def reindex_project_tree
