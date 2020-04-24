@@ -1,5 +1,4 @@
 class AttachmentSerializer < ActiveModel::Serializer
-  self.root = false
 
   # todo: move max_size and supported_mime_patterns and unsupported phrase to plugin configuration
 

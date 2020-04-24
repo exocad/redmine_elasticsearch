@@ -87,37 +87,53 @@ module RedmineElasticsearch
                   default:        {
                     type:      'custom',
                     tokenizer: 'standard',
-                    filter:    %w(lowercase russian_morphology english_morphology main_stopwords)
-                  },
-                  default_search: {
-                    type:      'custom',
-                    tokenizer: 'standard',
-                    filter:    %w(lowercase russian_morphology english_morphology main_stopwords)
+										filter:    %w(lowercase stoplist asciifolding hunspell_EN hunspell_DE)
                   }
                 },
                 filter:   {
-                  main_stopwords: {
-                    type:      'stop',
-                    stopwords: %w(а без более бы был была были было быть в вам вас весь во вот все всего всех вы где да даже для до его ее если есть еще же за здесь и из или им их к как ко когда кто ли либо мне может мы на надо наш не него нее нет ни них но ну о об однако он она они оно от очень по под при с со так также такой там те тем то того тоже той только том ты у уже хотя чего чей чем что чтобы чье чья эта эти это я a an and are as at be but by for if in into is it no not of on or such that the their then there these they this to was will with)
-                  },
-                  main_ngrams:    {
-                    type:     'edgeNGram',
-                    min_gram: 1,
-                    max_gram: 20
-                  }
+									stoplist: {
+										type: "stop",
+										stopwords: ["_english_", "_german_"]
+									},
+									hunspell_DE: {
+										"type": "hunspell",
+										"locale": "de_DE",
+										"dedup": true
+									},
+									hunspell_EN: {
+										"type": "hunspell",
+										"locale": "en_US",
+										"dedup": true
+									}
                 }
               }
             },
             mappings: {
-              _default_: {
-                properties: {
-                  type:        { type: 'keyword' },
-                  title:       { type: 'text' },
-                  description: { type: 'text' },
-                  datetime:    { type: 'date' },
-                  url:         { type: 'text', index: 'not_analyzed' }
-                }
-              }
+              # _default_: {
+              #   properties: {
+              #     type:        { type: 'keyword' },
+              #     title:       { type: 'text' },
+              #     description: { type: 'text' },
+              #     datetime:    { type: 'date' },
+              #     url:         { type: 'text', index: 'not_analyzed' }
+              #   }
+							# }
+							
+							properties: {
+								id:          { type: 'keyword' },
+								project_id:  { type: 'keyword' },
+								type:        { type: 'keyword' },
+								watchers:    { type: 'keyword' },
+								priority:    { type: 'keyword' },
+								title:       { type: 'text' },
+								description: { type: 'text' },
+								datetime:    { type: 'date' },
+								url:         { type: 'text', index: false },
+								private:     { type: 'boolean' },
+								is_private:  { type: 'alias', path: 'private' },
+								closed:      { type: 'boolean' },
+								is_closed:   { type: 'alias', path: 'closed' }
+							}
             }
           }
         )

@@ -1,6 +1,5 @@
-#gem 'elasticsearch-model'
-gem 'elasticsearch-model', git: 'git://github.com/elastic/elasticsearch-rails', branch: '5.x'
-gem 'active_model_serializers', '~> 0.8.3'
+gem 'elasticsearch-model'
+gem 'active_model_serializers'
 gem 'kaminari'
 gem 'ansi'
 

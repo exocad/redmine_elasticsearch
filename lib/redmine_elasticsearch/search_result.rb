@@ -3,7 +3,14 @@ module RedmineElasticsearch
 
     def project
       @project ||= Project.find_by_id(project_id)
-    end
+		end
+		
+		def type
+			@result['_source']['type']
+		end
+		def id
+			@result['_source']['id']
+		end
 
     # Adding event attributes aliases
     %w(datetime title description author type url).each do |attr|

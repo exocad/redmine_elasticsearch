@@ -10,12 +10,10 @@ class IssueSerializer < BaseSerializer
     :status,
     :done_ratio,
     :custom_field_values, :cfv,
-    :is_private,
     :private,
     :priority,
     :fixed_version,
     :due_date,
-    :is_closed,
 		:closed,
 		:watchers
 
@@ -62,11 +60,9 @@ class IssueSerializer < BaseSerializer
     object.is_private?
   end
 
-  alias_method :is_private, :private
 
   def closed
     object.closed?
   end
 
-  alias_method :is_closed, :closed
 end

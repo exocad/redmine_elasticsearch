@@ -135,40 +135,28 @@ module RedmineElasticsearch
 
       def perform_search(options = {})
         #todo: refactor this
-        project_ids = options[:projects] ? [options[:projects]].flatten.compact.map(&:id) : nil
-
-        common_must = []
+        project_ids = options[:projects] ? [options[:projects]].flatten.compact.map(&:id) : Project.where("status <> #{Project::STATUS_ARCHIVED}").map(&:id)
 
         search_fields   = get_search_fields(
           titles_only: options[:titles_only],
           search_attachments: options[:search_attachments]
         )
         search_operator = options[:all_words] ? 'AND' : 'OR'
-        common_must << get_main_query(options, search_fields, search_operator)
+        main_query = get_main_query(options, search_fields, search_operator)
 
         document_types = options[:scope].map(&:singularize)
-        common_must << { terms: { _type: document_types } }
+        common_must = [{ terms: { type: document_types } }]
 
         if project_ids
           common_must << {
-            has_parent: {
-              parent_type: 'parent_project',
-              query:       { ids: { values: project_ids } }
-            }
+						terms: { project_id: project_ids }
           }
         end
 
         common_must_not = []
 
-        common_must_not << {
-          has_parent: {
-            parent_type: 'parent_project',
-            query:       { term: { status_id: { value: Project::STATUS_ARCHIVED } } }
-          }
-        }
-
         # Search only open issues if such option is selected
-        common_must_not << { term: { is_closed: { value: true } } } if @open_issues
+        common_must_not << { term: { closed: { value: true } } } if @open_issues
 
         common_should = []
 
@@ -178,14 +166,12 @@ module RedmineElasticsearch
           common_should << type_query if type_query
 				end
 				
-				filter = []
 				userid = User.current.id
 				userorgroupid = [userid] + User.current.groups.map(&:id)
 
-
-				filter << { term: { author_id: userid } } if options[:issues_created]
-				filter << { terms: { assigned_to_id: userorgroupid } } if options[:issues_assigned]
-				filter << { bool: { should:
+				common_must << { term: { author_id: userid } } if options[:issues_created]
+				common_must << { terms: { assigned_to_id: userorgroupid } } if options[:issues_assigned]
+				common_must << { bool: { should:
 					[
 						{ terms: { assigned_to_id: userorgroupid } },
 						{ term: { author_id: userid } },
@@ -193,7 +179,7 @@ module RedmineElasticsearch
 					],
           minimum_should_match: 1
 				} } if options[:issues_involved]
-				filter << { bool: { should:
+				common_must << { bool: { should:
 					[
 						{ terms: { assigned_to_id: userorgroupid } },
 						{ terms: { watchers: userorgroupid } },
@@ -206,11 +192,16 @@ module RedmineElasticsearch
         payload = {
           query: {
             bool: {
-              must:                 common_must,
-              must_not:             common_must_not,
-              should:               common_should,
-              filter:               filter,
-              minimum_should_match: 1
+              must: main_query,
+							
+							filter: [{
+								bool: {
+									must: common_must,
+									must_not: common_must_not,
+									should: common_should,
+									minimum_should_match: 1
+								}
+							}]
             }
           },
           sort:  [
@@ -231,7 +222,7 @@ module RedmineElasticsearch
           from: options[:from]
         }.merge payload
 
-        search      = Elasticsearch::Model.search search_options, [], index: RedmineElasticsearch::INDEX_NAME
+        search      = Elasticsearch::Model.search search_options, [], index: RedmineElasticsearch::INDEX_NAME, type: '_doc'
         @query_curl ||= []
         search.results
       end
@@ -263,8 +254,7 @@ module RedmineElasticsearch
               query_string: {
                 query:            options[:q],
                 default_operator: search_operator,
-                fields:           search_fields,
-                use_dis_max:      true
+                fields:           search_fields
               }
             }
           when :match
@@ -272,8 +262,7 @@ module RedmineElasticsearch
               multi_match: {
                 query:       options[:q],
                 operator:    search_operator,
-                fields:      search_fields,
-                use_dis_max: true
+                fields:      search_fields
               }
             }
           else

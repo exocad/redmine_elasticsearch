@@ -9,8 +9,8 @@ Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in 
 
 ## Compatibility
 
-This plugin version is compatible only with Redmine 3.x and later.
-All tests are performed with Elasticsearch 5 version. 
+This plugin version is compatible only with Redmine 4.x and later.
+All tests are performed with Elasticsearch 7 version. 
 Work with other versions of Elasticsearch is possible but not guarantied.
 
 ## Installation
