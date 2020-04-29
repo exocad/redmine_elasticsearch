@@ -47,18 +47,11 @@ class ParentProject < Project
       # If the permission belongs to a project module, make sure the module is enabled
       if perm && perm.project_module
         must_queries << {
-          has_parent: {
-            parent_type: 'parent_project',
-            query:       {
-              term: {
-                'enabled_module_names.keyword' => { value: perm.project_module }
-              }
-            }
-          }
+					terms: { project_id: Project.joins(:enabled_modules).where('enabled_modules.name': perm.project_module).map(&:id) }
         }
       end
 
-      must_queries << { term: { _type: options[:type] } } if options[:type].present?
+      must_queries << { term: { type: options[:type] } } if options[:type].present?
 
       unless user.admin?
         statement_by_role    = {}
@@ -66,20 +59,14 @@ class ParentProject < Project
         hide_public_projects = user.pref[:hide_public_projects] == '1'
         if role.allowed_to?(permission) && !hide_public_projects
           statement_by_role[role] = {
-            has_parent: {
-              parent_type: 'parent_project',
-              query:       { term: { is_public: { value: true } } }
-            }
+						terms: { project_id: Project.where(is_public: true).map(&:id) }
           }
         end
         if user.logged?
           user.projects_by_role.each do |role, projects|
             if role.allowed_to?(permission) && projects.any?
               statement_by_role[role] = {
-                has_parent: {
-                  parent_type: 'parent_project',
-                  query:       { ids: { values: projects.collect(&:id) } }
-                }
+								terms: { project_id: projects.collect(&:id) }
               }
             end
           end

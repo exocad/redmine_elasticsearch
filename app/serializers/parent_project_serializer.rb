@@ -1,12 +1,15 @@
 class ParentProjectSerializer < ActiveModel::Serializer
-  self.root = false
-
   attributes :id,
              :is_public,
              :status_id,
-             :enabled_module_names
+						 :enabled_module_names,
+						 :relation
 
   def status_id
     object.status
-  end
+	end
+	
+	def relation
+		'parent_project'
+	end
 end
