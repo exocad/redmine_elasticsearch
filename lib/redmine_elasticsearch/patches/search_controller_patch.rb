@@ -175,7 +175,7 @@ module RedmineElasticsearch
 					[
 						{ terms: { assigned_to_id: userorgroupid } },
 						{ term: { author_id: userid } },
-						{ term: { 'journals.user_id': userid } }
+						{ term: { involved: userid } }
 					],
           minimum_should_match: 1
 				} } if options[:issues_involved]
@@ -184,7 +184,7 @@ module RedmineElasticsearch
 						{ terms: { assigned_to_id: userorgroupid } },
 						{ terms: { watchers: userorgroupid } },
 						{ term: { author_id: userid } },
-						{ term: { 'journals.user_id': userid } }
+						{ term: { involved: userid } }
 					],
           minimum_should_match: 1
 				} } if options[:issues_involved_or_watched]

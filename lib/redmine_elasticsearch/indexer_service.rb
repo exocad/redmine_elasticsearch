@@ -125,6 +125,7 @@ module RedmineElasticsearch
 								type:        { type: 'keyword' },
 								watchers:    { type: 'keyword' },
 								priority:    { type: 'keyword' },
+								involved:    { type: 'keyword' },
 								title:       { type: 'text' },
 								description: { type: 'text' },
 								datetime:    { type: 'date' },

@@ -15,14 +15,23 @@ class IssueSerializer < BaseSerializer
     :fixed_version,
     :due_date,
 		:closed,
-		:watchers
+		:watchers,
+		:notes,
+		:involved
 
-  has_many :journals, serializer: JournalSerializer
   has_many :attachments, serializer: AttachmentSerializer
 
 	def watchers
 		ret = object.watchers.map(&:user_id)
 		ret
+	end
+
+	def notes
+		object.journals.select(&:notes?).map(&:notes)
+	end
+
+	def involved
+		object.journals.map(&:user_id).uniq
 	end
 
   def author
