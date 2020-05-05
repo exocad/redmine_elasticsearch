@@ -1,6 +1,8 @@
 module RedmineElasticsearch
   class SearchResult < Elasticsearch::Model::Response::Result
 
+		@@event_url_base = "#{Setting.protocol}://#{Setting.host_name}".sub(/^\/+$/, '') + '/'
+
     def project
       @project ||= Project.find_by_id(project_id)
 		end
@@ -10,6 +12,10 @@ module RedmineElasticsearch
 		end
 		def id
 			@result['_source']['id']
+		end
+		def url
+			rel = @result['_source']['url']
+			URI.join(@@event_url_base, rel ? rel.sub(/^\/+/, '') : '').to_s
 		end
 
     # Adding event attributes aliases
