@@ -21,6 +21,9 @@ module RedmineElasticsearch
         # Errors counter
         errors = 0
 
+				# (Re-)Create attachments-ingest-pipline
+				recreate_attachments_ingest
+
         # Delete and create indexes
         recreate_index
 
@@ -59,6 +62,16 @@ module RedmineElasticsearch
           RedmineElasticsearch.search_klasses.inject(0) { |sum, klass| sum + klass.count }
       end
 
+			def recreate_attachments_ingest
+				puts "Recreating attachments ingest ..."
+				begin
+					RedmineElasticsearch.client.ingest.get_pipeline id: RedmineElasticsearch::ATTACHMENTS_PIPELINE
+				rescue Elasticsearch::Transport::Transport::Errors::NotFound
+					# maybe log the error...
+				end
+				create_attachments_ingest
+			end
+
       protected
 
       def logger
@@ -72,6 +85,27 @@ module RedmineElasticsearch
       def index_exists?
         RedmineElasticsearch.client.indices.exists? index: RedmineElasticsearch::INDEX_NAME
       end
+
+			def create_attachments_ingest
+				RedmineElasticsearch.client.ingest.put_pipeline({
+					id: RedmineElasticsearch::ATTACHMENTS_PIPELINE,
+					body: {
+						description: "Extraction of information in file-attachments",
+					  processors: [{
+							foreach: {
+								field: "attachments",
+								processor: {
+									attachment: {
+										target_field: "_ingest._value.file",
+										field: "_ingest._value.file",
+										properties: ['content', 'title', 'keywords']
+									}
+								}
+							}
+				    }]
+					}
+				})
+			end
 
       def create_index
         RedmineElasticsearch.client.indices.create(
@@ -109,16 +143,6 @@ module RedmineElasticsearch
               }
             },
             mappings: {
-              # _default_: {
-              #   properties: {
-              #     type:        { type: 'keyword' },
-              #     title:       { type: 'text' },
-              #     description: { type: 'text' },
-              #     datetime:    { type: 'date' },
-              #     url:         { type: 'text', index: 'not_analyzed' }
-              #   }
-							# }
-							
 							properties: {
 								id:          { type: 'keyword' },
 								project_id:  { type: 'keyword' },
@@ -134,6 +158,14 @@ module RedmineElasticsearch
 								is_private:  { type: 'alias', path: 'private' },
 								closed:      { type: 'boolean' },
 								is_closed:   { type: 'alias', path: 'closed' }
+								# attachments: { 
+								# 	properties: {
+								# 		file: {
+								# 			type: 'text',
+								# 			term_vector: "with_positions_offsets"
+								# 		}
+								# 	}
+								# }
 							}
             }
           }

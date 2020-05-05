@@ -2,7 +2,7 @@ class AttachmentSerializer < ActiveModel::Serializer
 
   # todo: move max_size and supported_mime_patterns and unsupported phrase to plugin configuration
 
-  MAX_SIZE  = 5.megabytes
+  MAX_SIZE  = 50.megabytes
 
   SUPPORTED_EXTENSIONS = %w{
     .doc .docx .htm .html .json .ods .odt .pdf .ppt .pptx .rb .rtf .sh .sql .txt .xls .xlsx .xml .yaml .yml
@@ -30,26 +30,19 @@ class AttachmentSerializer < ActiveModel::Serializer
     text\/
   }
 
-  UNSUPPORTED = 'unsupported'
+  UNSUPPORTED = ''
 
   attributes :created_on,
-    :filename,
     :description,
-    :author,
-    :filesize,
     :digest,
-    :downloads,
-    :author_id,
-    :content_type,
     :file
 
-  def author
-    object.author && object.author.to_s
-  end
-
-  def file
+	def file
+		if object.diskfile.include? 'useless'
+			puts 'readable'
+		end
     content = supported? ? File.read(object.diskfile) : UNSUPPORTED
-    Base64.encode64(content)
+    Base64.strict_encode64(content)
   end
 
   private

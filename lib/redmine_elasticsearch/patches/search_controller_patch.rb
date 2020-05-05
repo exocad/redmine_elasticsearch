@@ -234,8 +234,8 @@ module RedmineElasticsearch
           %w(title description journals.notes custom_field_values)
 
         search_attachment_fields = titles_only ?
-          %w(attachments.title) :
-          %w(attachments.title attachments.file attachments.filename attachments.description)
+          %w(attachments.title attachments.file.title attachments.file.keywords) :
+          %w(attachments.title attachments.file.title attachments.file.keywords attachments.file.content attachments.filename attachments.description)
 
         case search_attachments
           when '1'

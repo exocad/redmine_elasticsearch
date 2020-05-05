@@ -2,7 +2,8 @@ require 'elasticsearch'
 require 'elasticsearch/model'
 
 module RedmineElasticsearch
-  INDEX_NAME            = "#{Rails.application.class.parent_name.downcase}_#{Rails.env}"
+	INDEX_NAME            = "#{Rails.application.class.parent_name.downcase}_#{Rails.env}"
+	ATTACHMENTS_PIPELINE  = "#{Rails.application.class.parent_name.downcase}_attachments"
   BATCH_SIZE_FOR_IMPORT = 300
 
   def type2class_name(type)

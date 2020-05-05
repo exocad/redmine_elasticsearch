@@ -10,7 +10,10 @@ module ApplicationSearch
     # @return [Integer] errors count
     def self.import(options = {}, &block)
       # Batch size for bulk operations
-      batch_size = options.fetch(:batch_size, RedmineElasticsearch::BATCH_SIZE_FOR_IMPORT)
+			batch_size = options.fetch(:batch_size, RedmineElasticsearch::BATCH_SIZE_FOR_IMPORT)
+
+			# Pipeline for analyzing file attachments
+			pipeline = RedmineElasticsearch::ATTACHMENTS_PIPELINE
 
       # Document type
       type = options.fetch(:type, document_type)
@@ -21,15 +24,18 @@ module ApplicationSearch
       # Errors counter
       errors = 0
 
-      find_in_batches(batch_size: batch_size) do |items|
-        response = __elasticsearch__.client.bulk(
-          index: index_name,
-          # type:  type,
-          body:  items.map do |item|
-            data   = item.to_indexed_json
-            { index: { _id: "#{type}#{item.id}", data: data } }
-          end
-        )
+			find_in_batches(batch_size: batch_size) do |items|
+				chunk = []
+				items.each do |item|
+					data   = item.to_indexed_json
+					if data[:url].nil?
+						errors.inc
+					else 
+						chunk.push({ index: { _id: "#{type}#{item.id}", data: data } })
+					end
+				end
+
+        response = __elasticsearch__.client.bulk(index: index_name, body: chunk, pipeline: pipeline)
         imported += items.length
         errors   += response['items'].map { |k, v| k.values.first['error'] }.compact.length
 
