@@ -38,9 +38,6 @@ class AttachmentSerializer < ActiveModel::Serializer
     :file
 
 	def file
-		if object.diskfile.include? 'useless'
-			puts 'readable'
-		end
     content = supported? ? File.read(object.diskfile) : UNSUPPORTED
     Base64.strict_encode64(content)
   end
