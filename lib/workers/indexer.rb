@@ -1,10 +1,10 @@
 module Workers
-  class Indexer
+  class Indexer < ActiveJob::Base	
 
     class IndexError < StandardError
     end
 
-    @queue = :index_queue
+    queue_as :index_queue
 
     class << self
 
@@ -25,12 +25,11 @@ module Workers
       end
 
       def perform_async(options)
-        Resque.enqueue(Workers::Indexer, options)
+				Workers::Indexer.perform_later options
       end
 
       def perform(options)
-        id, type = options.with_indifferent_access[:id], options.with_indifferent_access[:type]
-        id.nil? ? update_class_index(type) : update_instance_index(type, id)
+        Workers::Indexer.new.perform(options)
       end
 
       def update_class_index(type)
@@ -49,6 +48,11 @@ module Workers
       rescue Errno::ECONNREFUSED => e
         raise IndexError, e, e.backtrace
       end
-    end
+		end
+		
+		def perform(options)
+			id, type = options.with_indifferent_access[:id], options.with_indifferent_access[:type]
+			id.nil? ? Indexer.update_class_index(type) : Indexer.update_instance_index(type, id)
+		end
   end
 end
