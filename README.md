@@ -1,7 +1,6 @@
 # Redmine Elasticsearch Plugin
 
-[![Build Status](https://travis-ci.org/Restream/redmine_elasticsearch.svg?branch=master)](https://travis-ci.org/Restream/redmine_elasticsearch)
-[![Code Climate](https://codeclimate.com/github/Restream/redmine_elasticsearch/badges/gpa.svg)](https://codeclimate.com/github/Restream/redmine_elasticsearch)
+[![Build Status](https://travis-ci.org/exocad/redmine_elasticsearch.svg?branch=master)](https://travis-ci.org/exocad/redmine_elasticsearch)
 
 This plugin integrates the Elasticsearch<sup>®</sup> full-text search engine into Redmine.
 
@@ -10,20 +9,20 @@ Elasticsearch is a trademark of Elasticsearch BV, registered in the U.S. and in 
 ## Compatibility
 
 This plugin version is compatible only with Redmine 4.x and later.
-All tests are performed with Elasticsearch 7 version. 
+All tests are performed with Elasticsearch 7.6 version. 
 Work with other versions of Elasticsearch is possible but not guarantied.
 
 ## Installation
 
-1. This plugin requires [Redmine Resque Plugin](https://github.com/Restream/redmine_resque). Install the plugin, but do not start a Resque worker for now.
+1. ~~This plugin requires [Redmine Resque Plugin](https://github.com/Restream/redmine_resque). Install the plugin, but do not start a Resque worker for now.~~ Switched to Rails ActiveJob which basically allows you to decide the job runner to use. You may skip this step.
 
 2. Download and install [Elasticsearch](http://www.elasticsearch.org/overview/elkdownloads/).
 
 3. Install other required plugins:
 
-    * [Morphological Analysis Plugin for ElasticSearch](https://github.com/imotov/elasticsearch-analysis-morphology)
+    * [Hunspell token filter](https://www.elastic.co/guide/en/elasticsearch/reference/7.6/analysis-hunspell-tokenfilter.html)
 
-    * [Mapper Attachments Type for Elasticsearch](https://github.com/elasticsearch/elasticsearch-mapper-attachments)
+    * [Ingest Attachment Processor Plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/7.6/ingest-attachment.html#ingest-attachment)
 
 4. To install Redmine Elasticsearch Plugin,
 
@@ -43,15 +42,12 @@ Work with other versions of Elasticsearch is possible but not guarantied.
 
         bundle install
 
-6. Reindex all documents using the following command:
+6. Reindex all documents using the following command BATCH_SIZE might be set smaller when indexing many large documents:
 
         cd {REDMINE_ROOT}
-        bundle exec rake redmine_elasticsearch:reindex_all RAILS_ENV=production
+        bundle exec rake redmine_elasticsearch:reindex_all RAILS_ENV=production BATCH_SIZE=25
 
-7. Start a Resque worker (as described in [Redmine Resque Plugin](https://github.com/Restream/redmine_resque) installation instructions).
-
-        cd YOUR_REDMINE_ROOT
-        bundle exec rake resque:work RAILS_ENV=production QUEUE=*
+7. If necessary start the worker of your job runner (e.g. resque or sidekiq)
 
 8. Restart Redmine
 
@@ -75,6 +71,8 @@ For change connection options just add some to config/configuration.yml. Here an
         request_timeout: 180
         host: '127.0.0.1'
         port: 9200
+        user: 'elastic'
+        password: 'changeme'
 
 [Full list of available options.](https://github.com/elastic/elasticsearch-ruby/blob/master/elasticsearch-transport/lib/elasticsearch/transport/client.rb#L34)
 
@@ -211,17 +209,13 @@ For example this query will search issues with done_ratio from 0 to 50 and due_d
 | Query string field | Redmine field name |
 |--------------------|------------------- |
 | attachments.created_on | Created |
-| attachments.filename | Format |
 | attachments.description | Description |
-| attachments.author | Author |
-| attachments.filesize | Size |
 | attachments.digest | MD5 digest |
-| attachments.downloads | D/L |
 | attachments.file | Attachment content |
 
 You can search for issues, projects, news, documents, wiki pages and messages by attachments. For example, to limit the search scope to containers with the **somefile.pdf** attachment filename, use the following syntax:
 
-    attachments.filename:somefile.pdf
+    attachments.description:specifications
 
 ## Testing
 
