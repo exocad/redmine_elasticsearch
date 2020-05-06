@@ -63,7 +63,7 @@ namespace :redmine_elasticsearch do
 		if ENV['BATCH_SIZE'].present?
 			ENV['BATCH_SIZE'].to_i
 		else
-			1024
+			16
 		end
   end
 
