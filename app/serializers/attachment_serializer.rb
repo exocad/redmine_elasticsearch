@@ -33,7 +33,8 @@ class AttachmentSerializer < ActiveModel::Serializer
   UNSUPPORTED = ''
 
   attributes :created_on,
-    :description,
+		:description,
+		:filename,
     :digest,
     :file
 
