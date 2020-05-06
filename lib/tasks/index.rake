@@ -20,8 +20,8 @@ namespace :redmine_elasticsearch do
     # Errors counter
     errors = 0
 
-    # Reindex project tree first
-    errors += reindex_project_tree
+		# (Re-)Create attachments-ingest-pipline
+    RedmineElasticsearch::IndexerService.recreate_attachments_ingest
 
     # Reindex all searchable types
     Redmine::Search.available_search_types.each do |search_type|
@@ -41,8 +41,8 @@ namespace :redmine_elasticsearch do
 
     errors = 0
 
-    # Reindex project tree
-    reindex_project_tree if search_type == 'projects'
+		# (Re-)Create attachments-ingest-pipline
+		RedmineElasticsearch::IndexerService.recreate_attachments_ingest
 
     # Reindex document
     errors += reindex_document_type search_type
@@ -65,20 +65,6 @@ namespace :redmine_elasticsearch do
 		else
 			16
 		end
-  end
-
-  def reindex_project_tree
-    puts "\nCounting projects..."
-    estimated_records = ParentProject.count
-    puts "#{estimated_records} will be imported."
-    bar = ANSI::ProgressBar.new("Project tree", estimated_records)
-    bar.flush
-    errors = ParentProject.import batch_size: batch_size do |imported_records|
-      bar.inc imported_records
-    end
-    bar.halt
-    puts "Done reindex project tree. Errors: #{errors}"
-    errors
   end
 
   def reindex_document_type(search_type)
