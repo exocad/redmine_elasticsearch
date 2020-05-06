@@ -4,8 +4,30 @@ module RedmineElasticsearch
   end
 
   class IndexerService
-
     class << self
+			def recent_index_timestamp(timestamp = nil)
+				ts_file = Rails.root.join('tmp', 'es_index_timestamp')
+				if timestamp.is_a? DateTime
+					@@recent_index_timestamp = timestamp
+					file = File.open(ts_file, 'w')
+					file.write(timestamp.to_s :db)
+					file.close
+				elsif timestamp == true
+					unless File.exists? ts_file
+						@@recent_index_timestamp = false
+					else
+						begin
+							file = File.open(ts_file)
+							@@recent_index_timestamp = DateTime.parse(file.read)
+							file.close
+						rescue
+							abort "Cannot update index - invalid index timestamp in tmp/es_index_timestamp. Please use redmine_elasticsearch:reindex_all before trying updating the index."
+						end
+					end
+				end
+				@@recent_index_timestamp
+			end
+
       def recreate_index
         delete_index if index_exists?
         create_index
@@ -178,7 +200,18 @@ module RedmineElasticsearch
 
       def find_search_klass(search_type)
         validate_search_type(search_type)
-        RedmineElasticsearch.type2class(search_type)
+				klass = RedmineElasticsearch.type2class(search_type)
+				ts = IndexerService.recent_index_timestamp
+				if ts
+					if klass == WikiPage
+						klass = klass.where("id in (#{WikiContent.select(:page_id).distinct.where('updated_on >= ?', ts).to_sql})")
+					elsif klass.has_attribute?(:updated_on)
+						klass = klass.where('updated_on >= ?', ts)
+					elsif klass.has_attribute?(:created_on)
+						klass = klass.where('created_on >= ?', ts)
+					end
+				end
+				klass
       end
 
       def validate_search_type(search_type)

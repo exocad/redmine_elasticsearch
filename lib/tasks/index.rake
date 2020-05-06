@@ -25,11 +25,13 @@ namespace :redmine_elasticsearch do
 
     # Reindex all searchable types
     Redmine::Search.available_search_types.each do |search_type|
-      reindex_document_type search_type
+      errors += reindex_document_type search_type
     end
 
     puts 'Refresh index for allowing searching right after reindex...'
-    RedmineElasticsearch.client.indices.refresh
+		RedmineElasticsearch.client.indices.refresh
+		
+		RedmineElasticsearch::IndexerService.recent_index_timestamp DateTime.now
 
     puts "Done reindex all. Errors: #{errors}"
   end
@@ -53,6 +55,32 @@ namespace :redmine_elasticsearch do
     puts "Done. Errors: #{errors}"
   end
 
+  
+  desc 'Update the index using the update-timestamps in database (BATCH_SIZE is optional). This is more for testing purposes, as not all changes may update the timestamps.'
+  task :update_index => :logged do
+		ts = RedmineElasticsearch::IndexerService.recent_index_timestamp true
+		unless ts.is_a? DateTime
+			abort 'Cannot update index (no timestamp given). Use redmine_elasticsearch:reindex_all before updating.'
+		end
+
+    # Errors counter
+		errors = 0
+		
+		puts 'Updating index incrementally...'
+    # Update index on all searchable types
+    Redmine::Search.available_search_types.each do |search_type|
+    # ['wiki_pages'].each do |search_type|
+      errors += reindex_document_type search_type
+    end
+
+    puts 'Refresh index for allowing searching right after reindex...'
+		RedmineElasticsearch.client.indices.refresh
+		
+		RedmineElasticsearch::IndexerService.recent_index_timestamp DateTime.now
+
+    puts "Done reindex all. Errors: #{errors}"
+  end
+
   task :logged => :environment do
     logger                    = Logger.new(STDOUT)
     logger.level              = Logger::WARN
@@ -69,7 +97,11 @@ namespace :redmine_elasticsearch do
 
   def reindex_document_type(search_type)
     puts "\nCounting estimated records for #{search_type}..."
-    estimated_records = RedmineElasticsearch::IndexerService.count_estimated_records(search_type)
+		estimated_records = RedmineElasticsearch::IndexerService.count_estimated_records(search_type)
+		if(estimated_records == 0)
+			puts "Skipping - nothing to do."
+			return 0
+		end
     puts "#{estimated_records} will be imported."
     bar = ANSI::ProgressBar.new("#{search_type}", estimated_records)
     bar.flush
