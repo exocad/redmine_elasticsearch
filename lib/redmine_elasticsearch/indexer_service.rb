@@ -6,20 +6,15 @@ module RedmineElasticsearch
   class IndexerService
     class << self
 			def recent_index_timestamp(timestamp = nil)
-				ts_file = Rails.root.join('tmp', 'es_index_timestamp')
 				if timestamp.is_a? DateTime
 					@@recent_index_timestamp = timestamp
-					file = File.open(ts_file, 'w')
-					file.write(timestamp.to_s :db)
-					file.close
+					RedmineElasticsearch::file_write RedmineElasticsearch::TS_FILE, timestamp.to_s(:db)
 				elsif timestamp == true
-					unless File.exists? ts_file
+					unless File.exists? RedmineElasticsearch::TS_FILE
 						@@recent_index_timestamp = false
 					else
 						begin
-							file = File.open(ts_file)
-							@@recent_index_timestamp = DateTime.parse(file.read)
-							file.close
+							@@recent_index_timestamp = DateTime.parse(RedmineElasticsearch::file_read(RedmineElasticsearch::TS_FILE))
 						rescue
 							abort "Cannot update index - invalid index timestamp in tmp/es_index_timestamp. Please use redmine_elasticsearch:reindex_all before trying updating the index."
 						end

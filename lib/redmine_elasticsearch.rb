@@ -6,6 +6,9 @@ module RedmineElasticsearch
 	ATTACHMENTS_PIPELINE  = "#{Rails.application.class.parent_name.downcase}_attachments"
   BATCH_SIZE_FOR_IMPORT = 300
 
+	STATE_FILE = Rails.root.join('tmp', 'es_index_state')
+	TS_FILE = Rails.root.join('tmp', 'es_index_timestamp')
+
   def type2class_name(type)
     type.to_s.underscore.classify
   end
@@ -17,6 +20,32 @@ module RedmineElasticsearch
   def search_klasses
     Redmine::Search.available_search_types.map { |type| type2class(type) }
   end
+
+	def file_read(file, &block)
+		return false unless File.exists? file
+		
+		begin
+			file = File.open(file, 'r')
+			ret = file.read
+			file.close
+		rescue => e
+			return false
+		end
+
+		yield(ret) if block_given?
+		return ret
+	end
+
+	def file_write(file, data = '')
+		begin
+			file = File.open(file, 'w')
+			ret = file.write data
+			file.close
+		rescue
+			return false
+		end
+		return true
+	end
 
   def apply_patch(patch, *targets)
     targets = Array(targets).flatten
