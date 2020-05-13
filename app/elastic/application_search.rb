@@ -42,9 +42,10 @@ module ApplicationSearch
 					response = __elasticsearch__.client.bulk(index: index_name, body: sub_chunk, pipeline: pipeline)
 					imported += sub_chunk.length
 					errors   += response['items'].map { |k, v| k.values.first['error'] }.compact.length
-
-        # Call block with imported records count in batch
-        yield(imported) if block_given?
+					
+					# Call block with imported records count in batch
+					yield(imported) if block_given?
+				end
 			end
 			
 			puts "Too large for transfer: #{too_large_objectes.map(&:id).join(', ')}"
