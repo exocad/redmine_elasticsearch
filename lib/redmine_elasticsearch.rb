@@ -8,6 +8,7 @@ module RedmineElasticsearch
 
 	STATE_FILE = Rails.root.join('tmp', 'es_index_state')
 	TS_FILE = Rails.root.join('tmp', 'es_index_timestamp')
+	BATCH_INFO_FILE = Rails.root.join('tmp', 'es_index_batch_log')
 
   def type2class_name(type)
     type.to_s.underscore.classify

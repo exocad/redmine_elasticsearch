@@ -39,11 +39,14 @@ module ApplicationSearch
 				end
 
 				too_large_objects += ApplicationSearch.adaptive_batch(chunk) do |sub_chunk|
+					RedmineElasticsearch::file_write(RedmineElasticsearch::BATCH_INFO_FILE,
+						"type: #{type}\nchunk_size: #{sub_chunk.length}\nitem-ids: #{sub_chunk[0][:index][:data][:id].to_s} to #{sub_chunk.last[:index][:data][:id].to_s}")
+
 					response = __elasticsearch__.client.bulk(index: index_name, body: sub_chunk, pipeline: pipeline)
 					imported += sub_chunk.length
 					errors   += response['items'].map { |k, v| k.values.first['error'] }.compact.length
 					
-					RedmineElasticsearch::file_write(RedmineElasticsearch::STATE_FILE, "#{type}/#{imported}")
+					RedmineElasticsearch::file_write(RedmineElasticsearch::STATE_FILE, "#{type}/#{imported} ##{sub_chunk[0][:index][:data][:id].to_s} to #{sub_chunk.last[:index][:data][:id].to_s}")
 					# Call block with imported records count in batch
 					yield(imported) if block_given?
 				end

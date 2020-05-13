@@ -16,7 +16,7 @@ namespace :redmine_elasticsearch do
 		start = 0
 		skip_index_creation = false
 		RedmineElasticsearch::file_read(RedmineElasticsearch::STATE_FILE) do |stat|
-			if stat && stat =~ /^(\w+)\/(\d+)$/
+			if stat && stat =~ /^(\w+)\/(\d+)/
 				types = types[types.index($1.pluralize),types.size]
 				start = $2.to_i
 				skip_index_creation = true
