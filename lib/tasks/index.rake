@@ -23,7 +23,7 @@ namespace :redmine_elasticsearch do
 			end
 		end
 
-		if skip_index_creation
+		unless skip_index_creation
 			puts 'Recreating index and updating mapping...'
 			RedmineElasticsearch::IndexerService.recreate_index
 
