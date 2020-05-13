@@ -7,12 +7,11 @@ module RedmineElasticsearch
     class << self
 			def recent_index_timestamp(timestamp = nil)
 				if timestamp.is_a? DateTime
-					@@recent_index_timestamp = timestamp
+					@@recent_index_timestamp = timestamp if defined? @@recent_index_timestamp
 					RedmineElasticsearch::file_write RedmineElasticsearch::TS_FILE, timestamp.to_s(:db)
 				elsif timestamp == true
-					unless File.exists? RedmineElasticsearch::TS_FILE
-						@@recent_index_timestamp = false
-					else
+					@@recent_index_timestamp = false
+					if File.exists? RedmineElasticsearch::TS_FILE
 						begin
 							@@recent_index_timestamp = DateTime.parse(RedmineElasticsearch::file_read(RedmineElasticsearch::TS_FILE))
 						rescue
