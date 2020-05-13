@@ -19,15 +19,15 @@ module ApplicationSearch
       type = options.fetch(:type, document_type)
 
       # Imported records counter
-      imported = 0
+      imported = options[:start] || 0
 
       # Errors counter
       errors = 0
 
 			# objects too large, try split-handling
 			too_large_objects = []
-
-			find_in_batches(batch_size: batch_size) do |items|
+			
+			find_in_batches(start: imported, batch_size: batch_size) do |items|
 				chunk = []
 				items.each do |item|
 					data   = item.to_indexed_json
@@ -43,6 +43,7 @@ module ApplicationSearch
 					imported += sub_chunk.length
 					errors   += response['items'].map { |k, v| k.values.first['error'] }.compact.length
 					
+					RedmineElasticsearch::file_write(RedmineElasticsearch::STATE_FILE, "#{type}/#{imported}")
 					# Call block with imported records count in batch
 					yield(imported) if block_given?
 				end
@@ -77,7 +78,8 @@ module ApplicationSearch
 				yield(batch[s0, step])
 				s0 += step
 				step = (step * 1.5).ceil if step < batch.size # slightly increase step size
-			rescue Elasticsearch::Transport::Transport::Errors::RequestEntityTooLarge
+			rescue Elasticsearch::Transport::Transport::Errors::RequestEntityTooLarge => e
+				e.inspect
 				if(step == 1)
 					too_large_objects << batch[0]
 					step = batch.size # it is likely that this object did cause the overall problem, so proceed normally
