@@ -24,6 +24,9 @@ module ApplicationSearch
       # Errors counter
       errors = 0
 
+			# objects too large, try split-handling
+			too_large_objects = []
+
 			find_in_batches(batch_size: batch_size) do |items|
 				chunk = []
 				items.each do |item|
@@ -35,14 +38,18 @@ module ApplicationSearch
 					end
 				end
 
-        response = __elasticsearch__.client.bulk(index: index_name, body: chunk, pipeline: pipeline)
-        imported += items.length
-        errors   += response['items'].map { |k, v| k.values.first['error'] }.compact.length
+				too_large_objects += ApplicationSearch.adaptive_batch(chunk) do |sub_chunk|
+					response = __elasticsearch__.client.bulk(index: index_name, body: sub_chunk, pipeline: pipeline)
+					imported += sub_chunk.length
+					errors   += response['items'].map { |k, v| k.values.first['error'] }.compact.length
 
         # Call block with imported records count in batch
         yield(imported) if block_given?
-      end
-      errors
+			end
+			
+			puts "Too large for transfer: #{too_large_objectes.map(&:id).join(', ')}"
+
+      errors + too_large_objects.size
 		end
 		
     index_name RedmineElasticsearch::INDEX_NAME
@@ -57,6 +64,30 @@ module ApplicationSearch
   def async_update_index
     Workers::Indexer.defer(self)
   end
+
+	# Andaptively tries to progress the given batch and increases/decreases the batch size
+	# in order to transfer the whole batch and handle too large entity sizes.
+	def self.adaptive_batch(batch, &block)
+		s0 = 0
+		step = batch.size
+		too_large_objects = []
+		while s0 < batch.size
+			begin
+				yield(batch[s0, step])
+				s0 += step
+				step = (step * 1.5).ceil if step < batch.size # slightly increase step size
+			rescue Elasticsearch::Transport::Transport::Errors::RequestEntityTooLarge
+				if(step == 1)
+					too_large_objects << batch[0]
+					step = batch.size # it is likely that this object did cause the overall problem, so proceed normally
+					s0 += 1 # skip problematic element for now
+				else
+					step = (step/2.0).floor
+				end
+			end
+		end
+		too_large_objects
+	end
 
   module ClassMethods
 

@@ -42,7 +42,7 @@ Work with other versions of Elasticsearch is possible but not guarantied.
 
         bundle install
 
-6. Reindex all documents using the following command BATCH_SIZE might be set smaller when indexing many large documents:
+6. Reindex all documents using the following command (BATCH_SIZE is just a maximum and will adapted when entities are too large):
 
         cd {REDMINE_ROOT}
         bundle exec rake redmine_elasticsearch:reindex_all RAILS_ENV=production BATCH_SIZE=25
