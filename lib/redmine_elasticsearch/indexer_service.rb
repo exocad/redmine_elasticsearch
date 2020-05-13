@@ -25,7 +25,7 @@ module RedmineElasticsearch
 						end
 					end
 				end
-				@@recent_index_timestamp
+				@@recent_index_timestamp if defined? @@recent_index_timestamp
 			end
 
       def recreate_index
