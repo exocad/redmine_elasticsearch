@@ -52,7 +52,7 @@ module ApplicationSearch
 				end
 			end
 			
-			puts "Too large for transfer: #{too_large_objectes.map(&:id).join(', ')}"
+			puts "Too large for transfer: #{too_large_objects.map(&:id).join(', ')}"
 
       errors + too_large_objects.size
 		end
