@@ -9,7 +9,7 @@ class IssueSerializer < BaseSerializer
     :category,
     :status,
     :done_ratio,
-    :custom_field_values, :cfv,
+    :custom_field_values,
     :private,
     :priority,
     :fixed_version,
@@ -54,8 +54,6 @@ class IssueSerializer < BaseSerializer
     fields = object.custom_field_values.find_all { |cfv| cfv.custom_field.searchable? }
     fields.map(&:to_s)
   end
-
-  alias_method :cfv, :custom_field_values
 
   def priority
     object.priority.try(:name)

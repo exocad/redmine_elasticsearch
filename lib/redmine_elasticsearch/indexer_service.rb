@@ -173,7 +173,9 @@ module RedmineElasticsearch
 								private:     { type: 'boolean' },
 								is_private:  { type: 'alias', path: 'private' },
 								closed:      { type: 'boolean' },
-								is_closed:   { type: 'alias', path: 'closed' }
+								is_closed:   { type: 'alias', path: 'closed' },
+								custom_field_values: { type: 'text' },
+								cfv:         { type: 'alias', path: 'custom_field_values' }
 								# attachments: { 
 								# 	properties: {
 								# 		file: {
