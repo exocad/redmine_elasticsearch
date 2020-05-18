@@ -41,7 +41,7 @@ namespace :redmine_elasticsearch do
     errors = 0
 
     # Reindex all searchable types
-    types.each do |search_type|
+	['wiki_pages'].each do |search_type|
 			errors += reindex_document_type search_type, start
 			start = 0 # only first type should see start-index
     end
@@ -131,9 +131,9 @@ namespace :redmine_elasticsearch do
     errors = RedmineElasticsearch::IndexerService.reindex(search_type, batch_size: batch_size, start: start) do |imported_records|
       bar.set imported_records
     end
-    bar.halt
-    puts "Done reindex #{search_type}. Errors: #{errors}"
-    errors
+    bar.finish
+    puts "Done reindex #{search_type}. Errors: #{errors[:total]}, too large (IDs): #{errors[:too_large].empty? ? 'none' : errors[:too_large].join(', ')}"
+    errors[:total]
   end
 
 end

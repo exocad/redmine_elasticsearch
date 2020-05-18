@@ -52,9 +52,7 @@ module ApplicationSearch
 				end
 			end
 			
-			puts "Too large for transfer: #{too_large_objects.join(', ')}" unless too_large_objects.empty?
-
-      errors + too_large_objects.size
+      { total: errors + too_large_objects.size, too_large: too_large_objects }
 		end
 		
     index_name RedmineElasticsearch::INDEX_NAME
