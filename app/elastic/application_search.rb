@@ -52,7 +52,7 @@ module ApplicationSearch
 				end
 			end
 			
-			puts "Too large for transfer: #{too_large_objects.map(&:id).join(', ')}"
+			puts "Too large for transfer: #{too_large_objects.join(', ')}" unless too_large_objects.empty?
 
       errors + too_large_objects.size
 		end
@@ -84,7 +84,7 @@ module ApplicationSearch
 			rescue Elasticsearch::Transport::Transport::Errors::RequestEntityTooLarge => e
 				e.inspect
 				if(step == 1)
-					too_large_objects << batch[0]
+					too_large_objects << batch[0][:index][:data][:id]
 					step = batch.size # it is likely that this object did cause the overall problem, so proceed normally
 					s0 += 1 # skip problematic element for now
 				else
