@@ -19,7 +19,7 @@ class IssueSerializer < BaseSerializer
 		:notes,
 		:involved
 
-  has_many :attachments, serializer: AttachmentSerializer
+	include RedmineElasticsearch::SerializesAttachments
 
 	def watchers
 		ret = object.watchers.map(&:user_id)

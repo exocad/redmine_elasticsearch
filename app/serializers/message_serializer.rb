@@ -6,7 +6,7 @@ class MessageSerializer < BaseSerializer
              :updated_on,
              :replies_count
 
-  has_many :attachments, serializer: AttachmentSerializer
+  include RedmineElasticsearch::SerializesAttachments
 
   def project_id
     object.board.try(:project_id)
