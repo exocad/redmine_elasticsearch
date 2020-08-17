@@ -41,7 +41,7 @@ namespace :redmine_elasticsearch do
     errors = 0
 
     # Reindex all searchable types
-	['wiki_pages'].each do |search_type|
+	  types.each do |search_type|
 			errors += reindex_document_type search_type, start
 			start = 0 # only first type should see start-index
     end
